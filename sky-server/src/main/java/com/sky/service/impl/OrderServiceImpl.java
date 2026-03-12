@@ -1,7 +1,6 @@
 package com.sky.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -15,7 +14,6 @@ import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
 import com.sky.result.PageResult;
 import com.sky.service.OrderService;
-import com.sky.utils.HttpClientUtil;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
@@ -26,20 +24,40 @@ import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Slf4j
 public class OrderServiceImpl implements OrderService {
+
+    private static final String SUBMIT_TOKEN_PREFIX = "order:submit:token:";
+    private static final long SUBMIT_TOKEN_TTL_SECONDS = 300; // 5分钟
+
+    /**
+     * Lua 语义：
+     * - key 不存在 -> 返回 "MISSING"
+     * - value 以 DONE: 开头 -> 原样返回（让调用方返回同一订单）
+     * - value = PROCESSING -> 返回 "PROCESSING"（处理中）
+     * - 其他情况 -> 设置为 PROCESSING 并设置 TTL，返回 "OK"（允许创建订单）
+     */
+    private static final DefaultRedisScript<String> SUBMIT_TOKEN_CLAIM_SCRIPT = new DefaultRedisScript<>(
+            "local v = redis.call('GET', KEYS[1]);" +
+                    "if (not v) then return 'MISSING' end;" +
+                    "if (string.sub(v,1,5) == 'DONE:') then return v end;" +
+                    "if (v == 'PROCESSING') then return 'PROCESSING' end;" +
+                    "redis.call('SET', KEYS[1], 'PROCESSING', 'EX', tonumber(ARGV[1]));" +
+                    "return 'OK';",
+            String.class
+    );
 
     @Autowired
     private OrderMapper orderMapper;
@@ -65,26 +83,80 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private WebSocketServer webSocketServer;
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private org.springframework.core.env.Environment environment;
+
+    @Override
+    public String getSubmitToken() {
+        Long userId = BaseContext.getCurrentId();
+        String token = UUID.randomUUID().toString().replace("-", "");
+        String key = SUBMIT_TOKEN_PREFIX + userId + ":" + token;
+        // INIT 状态
+        stringRedisTemplate.opsForValue().set(key, "INIT", java.time.Duration.ofSeconds(SUBMIT_TOKEN_TTL_SECONDS));
+        return token;
+    }
 
     @Override
     public OrderSubmitVO submitOrder(OrdersSubmitDTO ordersSubmitDTO){
-        AddressBook addressBook = addressBookMapper.getById(ordersSubmitDTO.getAddressBookId());
+        Long currentUserId = BaseContext.getCurrentId();
+        String submitToken = ordersSubmitDTO.getSubmitToken();
+        if (submitToken == null || submitToken.isBlank()) {
+            throw new OrderBusinessException("缺少下单token，请刷新页面后重试");
+        }
+        String tokenKey = SUBMIT_TOKEN_PREFIX + currentUserId + ":" + submitToken;
+        String claim = stringRedisTemplate.execute(
+                SUBMIT_TOKEN_CLAIM_SCRIPT,
+                java.util.Collections.singletonList(tokenKey),
+                String.valueOf(SUBMIT_TOKEN_TTL_SECONDS)
+        );
+
+        if ("MISSING".equals(claim)) {
+            throw new OrderBusinessException("下单token已失效，请重新获取后再提交");
+        }
+        if ("PROCESSING".equals(claim)) {
+            throw new OrderBusinessException("订单处理中，请勿重复提交");
+        }
+        if (claim != null && claim.startsWith("DONE:")) {
+            Long orderId = Long.valueOf(claim.substring("DONE:".length()));
+            Orders orders = orderMapper.getByOrderId(orderId);
+            if (orders == null) {
+                // 兜底：若订单不存在，允许重新下单（释放 token）
+                stringRedisTemplate.delete(tokenKey);
+            } else {
+                return OrderSubmitVO.builder()
+                        .id(orders.getId())
+                        .orderNumber(orders.getNumber())
+                        .orderAmount(orders.getAmount())
+                        .orderTime(orders.getOrderTime())
+                        .build();
+            }
+        }
+
+        try {
+            AddressBook addressBook = addressBookMapper.getById(ordersSubmitDTO.getAddressBookId());
         if(addressBook==null){
             throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_IS_NULL);
         }
 
         String fullAddress = addressBook.getCityName() + addressBook.getDistrictName() + addressBook.getDetail();
-        try {
-            // 调用百度地图工具类
-            BaiDuMapUtil.checkOutOfRange(fullAddress);
-        } catch (OrderBusinessException e) {
-            // 1. 业务异常（明确的超出范围、地址无法解析）：直接抛出，告知用户
-            throw e;
-        } catch (Exception e) {
-            // 2. 系统/网络异常（超时、连接失败、AK错误）：记录日志，告知用户系统繁忙
-            // 这里的 Exception 包含了 HttpClient 抛出的超时、IO异常等
-            log.error("百度地图距离校验接口调用失败，地址: {}", fullAddress, e);
-            throw new OrderBusinessException("配送系统繁忙，无法计算距离，请稍后重试");
+        
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean isDevEnvironment = activeProfiles.length > 0 && "dev".equals(activeProfiles[0]);
+        
+        if (!isDevEnvironment) {
+            try {
+                BaiDuMapUtil.checkOutOfRange(fullAddress);
+            } catch (OrderBusinessException e) {
+                throw e;
+            } catch (Exception e) {
+                log.error("百度地图距离校验接口调用失败，地址: {}", fullAddress, e);
+                throw new OrderBusinessException("配送系统繁忙，无法计算距离，请稍后重试");
+            }
+        } else {
+            log.info("开发环境，跳过配送距离校验，地址: {}", fullAddress);
         }
 
         Long userId = addressBook.getUserId();
@@ -128,7 +200,22 @@ public class OrderServiceImpl implements OrderService {
                 .orderTime(order.getOrderTime())
                 .build();
 
-        return orderSubmitVO;
+        // 标记 token 为 DONE（重复提交直接返回同一订单）
+        stringRedisTemplate.opsForValue().set(
+                tokenKey,
+                "DONE:" + order.getId(),
+                java.time.Duration.ofSeconds(SUBMIT_TOKEN_TTL_SECONDS)
+        );
+
+            return orderSubmitVO;
+        } catch (RuntimeException e) {
+            // 下单失败时释放 token，允许客户端重新获取 token 后重试
+            try {
+                stringRedisTemplate.delete(tokenKey);
+            } catch (Exception ignore) {
+            }
+            throw e;
+        }
     }
 
     @Override

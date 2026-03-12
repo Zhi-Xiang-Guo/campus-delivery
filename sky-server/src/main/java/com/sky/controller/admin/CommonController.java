@@ -72,6 +72,13 @@ public class CommonController {
         log.info("文件上传：{}",file);
 
         try {
+            // 确保上传目录存在
+            File dir = new File(imgUrl);
+            if (!dir.exists() && !dir.mkdirs()) {
+                log.error("创建图片上传目录失败: {}", imgUrl);
+                return Result.error(MessageConstant.UPLOAD_FAILED);
+            }
+
             //原始文件名
             String originalFilename = file.getOriginalFilename();
             //截取原始文件名的后缀   dfdfdf.png
@@ -80,13 +87,13 @@ public class CommonController {
             String objectName = UUID.randomUUID().toString() + extension;
 
             //文件的请求路径
-           file.transferTo(new File(imgUrl + objectName));
+            file.transferTo(new File(dir, objectName));
 
             return Result.success(requestHeader+objectName);
         } catch (IOException e) {
             log.error("文件上传失败：{}", e);
+            return Result.error(MessageConstant.UPLOAD_FAILED);
         }
 
-        return null;
     }
 }

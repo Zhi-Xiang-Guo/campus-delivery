@@ -23,6 +23,12 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    @GetMapping("/submitToken")
+    @ApiOperation("获取下单防重token")
+    public Result<String> submitToken() {
+        return Result.success(orderService.getSubmitToken());
+    }
+
     @PostMapping("/submit")
     @ApiOperation("用户下单")
     public Result<OrderSubmitVO> orderSubmit(@RequestBody OrdersSubmitDTO ordersSubmitDTO){

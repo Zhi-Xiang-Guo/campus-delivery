@@ -5,6 +5,8 @@ import com.sky.entity.Setmeal;
 import com.sky.result.Result;
 import com.sky.service.SetmealService;
 import com.sky.vo.DishItemVO;
+import com.sky.cache.bloom.BloomFilterStrategy;
+import com.sky.cache.bloom.BloomWarmupRunner;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,8 @@ import java.util.List;
 public class SetmealController {
     @Autowired
     private SetmealService setmealService;
+    @Autowired
+    private BloomFilterStrategy bloomFilterStrategy;
 
     /**
      * 条件查询
@@ -32,6 +36,14 @@ public class SetmealController {
     @ApiOperation("根据分类id查询套餐")
     @Cacheable(cacheNames = "setmealCache", key="#categoryId")
     public Result<List<Setmeal>> list(Long categoryId) {
+        if(categoryId == null){
+            return Result.success(java.util.Collections.emptyList());
+        }
+        // 缓存穿透防护：明显不存在的分类 id 直接返回空
+        if(!bloomFilterStrategy.mightContain(BloomWarmupRunner.BLOOM_CATEGORY_ID, categoryId.toString())){
+            return Result.success(java.util.Collections.emptyList());
+        }
+
         Setmeal setmeal = new Setmeal();
         setmeal.setCategoryId(categoryId);
         setmeal.setStatus(StatusConstant.ENABLE);

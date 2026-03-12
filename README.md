@@ -70,3 +70,30 @@ git clone https://github.com/ZzzeLoong/sky-take-out.git
 <img src="./assets/10.png" height="500px"/>
 <img src="./assets/11.png" height="450px"/>
 <img src="./assets/12.png"/>
+
+## 使用 Docker 一键启动（可选）
+
+已安装 **Docker** 和 **Docker Compose** 的情况下，可以直接用容器启动整套环境。
+
+### 1. 启动
+
+在项目根目录（包含 `docker-compose.yml`）执行：
+
+```bash
+docker-compose up -d
+```
+
+使用默认配置即可完成 MySQL、Redis、sky-server 和 Nginx 的启动。
+
+### 2. 访问
+
+- 管理端后台：浏览器访问 `http://localhost:80`。
+- 小程序端：按上文「Windows 环境运行指南」的步骤，在微信开发者工具中导入项目，接口地址指向本机即可。
+
+### 3. 停止
+
+在项目根目录执行：
+
+```bash
+docker-compose down
+```

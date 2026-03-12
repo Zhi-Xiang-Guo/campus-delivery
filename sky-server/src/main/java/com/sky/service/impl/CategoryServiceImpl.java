@@ -4,7 +4,6 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
-import com.sky.context.BaseContext;
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
@@ -14,11 +13,12 @@ import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.CategoryService;
+import com.sky.cache.bloom.BloomFilterStrategy;
+import com.sky.cache.bloom.BloomWarmupRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -34,6 +34,8 @@ public class CategoryServiceImpl implements CategoryService {
     private DishMapper dishMapper;
     @Autowired
     private SetmealMapper setmealMapper;
+    @Autowired
+    private BloomFilterStrategy bloomFilterStrategy;
 
     /**
      * 新增分类
@@ -54,6 +56,10 @@ public class CategoryServiceImpl implements CategoryService {
 //        category.setUpdateUser(BaseContext.getCurrentId());
 
         categoryMapper.insert(category);
+        // 新增分类后把 id 灌入布隆，避免假阴性导致的穿透拦截
+        if(category.getId() != null){
+            bloomFilterStrategy.put(BloomWarmupRunner.BLOOM_CATEGORY_ID, category.getId().toString());
+        }
     }
 
     /**

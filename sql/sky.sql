@@ -1,5 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `sky_take_out` ;
+CREATE DATABASE IF NOT EXISTS `sky_take_out`
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_unicode_ci;
 USE `sky_take_out`;
+SET NAMES utf8mb4;
 
 DROP TABLE IF EXISTS `address_book`;
 CREATE TABLE `address_book` (

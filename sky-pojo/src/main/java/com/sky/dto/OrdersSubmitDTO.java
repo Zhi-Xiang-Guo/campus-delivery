@@ -9,6 +9,10 @@ import java.time.LocalDateTime;
 
 @Data
 public class OrdersSubmitDTO implements Serializable {
+    /**
+     * 防重复提交 token（由服务端生成，下单时原样带回）。
+     */
+    private String submitToken;
     //地址簿id
     private Long addressBookId;
     //付款方式

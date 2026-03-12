@@ -4,6 +4,26 @@
 *.class
 *Test.java
 **/test/
-sky-server/images/*
+
+# 本地开发 / IDE 配置
+.vscode/
+*.swp
+*.swo
+*.DS_Store
+
+# 日志和运行时文件
+*.log
+*.pid
+admin-client/nginx-1.20.2/logs/
+
+# Node / 前端依赖
+node_modules/
+**/dist/
+**/build/
+
+# 本地环境配置
 **/application-dev.yml
+
+# 业务上传图片目录，只保留占位文件
+sky-server/images/*
 !sky-server/images/.gitkeep

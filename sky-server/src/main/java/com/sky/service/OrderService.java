@@ -8,6 +8,11 @@ import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 
 public interface OrderService {
+    /**
+     * 获取下单防重 token（客户端提交订单时需携带）。
+     */
+    String getSubmitToken();
+
     OrderSubmitVO submitOrder(OrdersSubmitDTO ordersSubmitDTO);
 
     /**

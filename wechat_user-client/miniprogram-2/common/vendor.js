@@ -19948,7 +19948,7 @@ Object.defineProperty(exports, "__esModule", { value: true });exports.default = 
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });exports.repetitionOrder = exports.paymentOrder = exports.reminderOrder = exports.cancelOrder = exports.getOrderDetail = exports.getOrderPage = exports.getShopPhone = exports.getShopStatus = exports.querySetmealDishById = exports.getAddressBookDefault = exports.oneOrderAgain = exports.queryAddressBookById = exports.delAddressBook = exports.editAddressBook = exports.addAddressBook = exports.putAddressBookDefault = exports.queryAddressBookList = exports.submitOrderSubmit = exports.queryOrderUserPage = exports.delShoppingCart = exports.newShoppingCartSub = exports.newAddShoppingCartAdd = exports.editHoppingCart = exports.getShoppingCartList = exports.querySetmeaList = exports.addShoppingCart = exports.commonDownload = exports.dishListByCategoryId = exports.getCategoryList = exports.userLogin = exports.payOrder = exports.clearOrder = exports.delDish = exports.addDish = exports.getDishList = exports.getDishDetail = exports.getList = exports.getMoreNorm = exports.getTableOrderDishList = exports.getTableState = exports.openTable = void 0;var _request = __webpack_require__(/*! ../../utils/request.js */ 25);
+Object.defineProperty(exports, "__esModule", { value: true });exports.repetitionOrder = exports.paymentOrder = exports.reminderOrder = exports.cancelOrder = exports.getOrderDetail = exports.getOrderPage = exports.getShopPhone = exports.getShopStatus = exports.querySetmealDishById = exports.getAddressBookDefault = exports.oneOrderAgain = exports.queryAddressBookById = exports.delAddressBook = exports.editAddressBook = exports.addAddressBook = exports.putAddressBookDefault = exports.queryAddressBookList = exports.submitOrderSubmit = exports.getSubmitToken = exports.queryOrderUserPage = exports.delShoppingCart = exports.newShoppingCartSub = exports.newAddShoppingCartAdd = exports.editHoppingCart = exports.getShoppingCartList = exports.querySetmeaList = exports.addShoppingCart = exports.commonDownload = exports.dishListByCategoryId = exports.getCategoryList = exports.userLogin = exports.payOrder = exports.clearOrder = exports.delDish = exports.addDish = exports.getDishList = exports.getDishDetail = exports.getList = exports.getMoreNorm = exports.getTableOrderDishList = exports.getTableState = exports.openTable = void 0;var _request = __webpack_require__(/*! ../../utils/request.js */ 25);
 
 // 开桌
 var openTable = function openTable(params) {return (
@@ -20162,9 +20162,16 @@ exports.queryOrderUserPage = queryOrderUserPage;var submitOrderSubmit = function
 
 };
 
+// 获取下单防重 token
+exports.submitOrderSubmit = submitOrderSubmit;var getSubmitToken = function getSubmitToken() {
+  return (0, _request.request)({
+    url: '/user/order/submitToken',
+    method: 'GET' });
+};
+
 
 // 查询地址列表
-exports.submitOrderSubmit = submitOrderSubmit;var queryAddressBookList = function queryAddressBookList(params) {
+exports.getSubmitToken = getSubmitToken;var queryAddressBookList = function queryAddressBookList(params) {
   return (0, _request.request)({
     url: '/user/addressBook/list',
     method: 'GET',
@@ -21891,6 +21898,7 @@ var _default = {
       weeks: [],
       scrollTop: 0,
       addressList: [],
+      submitToken: '',
       isHandlePy: false };
 
   },
@@ -21952,6 +21960,12 @@ var _default = {
     this.gender = this.$store.state.baseUserInfo && this.$store.state.baseUserInfo.gender;
     this.remark = this.remarkData();
     this.init();
+    // 获取下单防重 token（用于幂等下单）
+    (0, _api.getSubmitToken)().then(function (res) {
+      if (res && res.code === 1) {
+        _this.submitToken = res.data;
+      }
+    }).catch(function () {});
     // 获取一小时以后的时间
     this.getHarfAnOur();
 
@@ -22101,6 +22115,23 @@ var _default = {
 
         return false;
       }
+
+      // 没有 token 时先获取一次，再发起提交
+      if (!this.submitToken) {
+        (0, _api.getSubmitToken)().then(function (res) {
+          if (res && res.code === 1) {
+            _this7.submitToken = res.data;
+            _this7.payOrderHandle();
+          } else {
+            _this7.isHandlePy = false;
+            uni.showToast({ title: (res && res.msg) || '获取下单token失败', icon: 'none' });
+          }
+        }).catch(function () {
+          _this7.isHandlePy = false;
+          uni.showToast({ title: '获取下单token失败', icon: 'none' });
+        });
+        return;
+      }
       var num = null;
       var status = null;
 
@@ -22108,6 +22139,7 @@ var _default = {
       var params = (_params = {
         payMethod: 1,
         addressBookId: this.addressBookId,
+        submitToken: this.submitToken,
         remark: this.remark,
         estimatedDeliveryTime: this.arrivalTime === '立即派送' ? (0, _index.presentFormat)() : (0, _index.dateFormat)(this.isTomorrow,
         this.arrivalTime),
