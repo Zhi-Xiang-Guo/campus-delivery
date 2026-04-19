@@ -15,5 +15,5 @@ sky:
     host: localhost
     port: 6379
   wechat:
-    app-id: ''           # 替换为空字符串
-    app-secret: ''       # 替换为空字符串
+    app-id: 'wxb5fecdc4f511f5ba'           # 替换为空字符串
+    app-secret: 'bb5654181fcb2b50aaa84c824953e9c7'       # 替换为空字符串
