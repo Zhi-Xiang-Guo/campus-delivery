@@ -5,15 +5,15 @@ sky:
     port: 3306
     database: sky_take_out
     username: root
-    password: 1234
+    password: 123
   redis:
     host: localhost
     port: 6379
     password:
     database: 10
   wechat:
-    appid: wxe70be7a8036af812
-    secret: 6687473dcc70e4ce9f0490814dd47377
+    appid: 'wxb5fecdc4f511f5ba'           # 替换为空字符串
+    secret: '99fc07d33ec9d026933621230225f34c'       # 替换为空字符串
     #    以下字段需要营业资质获取，目前实现的是模拟微信支付可以不用下面字段
     mchid: 1888888
     mchSerialNo: 4B3B3DC35414*****55BAF8DE9CC7CF407606
