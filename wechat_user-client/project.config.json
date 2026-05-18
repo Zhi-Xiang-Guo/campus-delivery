@@ -25,5 +25,6 @@
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
+  "miniprogramRoot": "miniprogram-2/",
   "projectname": "wechat_user-client"
 }
