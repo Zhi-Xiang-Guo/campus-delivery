@@ -4533,7 +4533,7 @@ var _index = __webpack_require__(/*! ../../utils/index.js */ 29);function _inter
                 if (item.dishFlavor !== '' && item.dishFlavor) {
                   dishFlavorDatas = item.dishFlavor;
                 } else if (flavorRemark.length > 0) {
-                  //dishFlavorDatas = flavorRemark[0];
+                  //dishFlavorDatas = flavorRemark.join(',');
                   dishFlavorDatas = flavorRemark.join(',')
                 } else {
                   dishFlavorDatas = null;
@@ -4607,7 +4607,7 @@ var _index = __webpack_require__(/*! ../../utils/index.js */ 29);function _inter
                 if (item.dishFlavor !== '' && item.dishFlavor) {
                   dishFlavorDatas = item.dishFlavor;
                 } else if (flavorRemark.length > 0) {
-                  dishFlavorDatas = flavorRemark[0];
+                  dishFlavorDatas = flavorRemark.join(',');
                 } else {
                   dishFlavorDatas = null;
                 }
