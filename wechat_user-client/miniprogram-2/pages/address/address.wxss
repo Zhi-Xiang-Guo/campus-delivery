@@ -196,8 +196,8 @@
   height: 86rpx;
   line-height: 86rpx;
   border-radius: 8rpx;
-  background: #ffc200;
-  border: 1px solid #ffc200;
+  background: #409EFF;
+  border: 1px solid #409EFF;
   opacity: 1;
   font-size: 30rpx;
   font-family: PingFangSC, PingFangSC-Medium;

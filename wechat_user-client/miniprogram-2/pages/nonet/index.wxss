@@ -133,7 +133,7 @@
   width: 248rpx;
   line-height: 72rpx;
   margin-top: 20rpx;
-  background: linear-gradient(144deg, #ffda05 18%, #ffb302 80%);
+  background: #409EFF;
   border-radius: 36rpx;
 }
 
