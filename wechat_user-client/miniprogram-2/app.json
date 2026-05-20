@@ -10,7 +10,9 @@
     "pages/remark/index",
     "pages/my/my",
     "pages/addOrEditAddress/addOrEditAddress",
-    "pages/historyOrder/historyOrder"
+    "pages/historyOrder/historyOrder",
+    "pages/comment/comment",
+    "pages/myComment/myComment"
   ],
   "subPackages": [],
   "window": {

@@ -86,9 +86,13 @@
 }
 .my-center .container .address_order.data-v-0be17cc6 {
   width: 710rpx;
-  height: 200rpx;
+  height: 300rpx;
   margin: 20rpx auto;
   margin-top: 0;
+  background: #ffffff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 24rpx rgba(31, 54, 88, 0.06);
 }
 .my-center .container .address_order .address.data-v-0be17cc6 {
   line-height: 100rpx;
@@ -159,6 +163,7 @@
 .my-center .container .recent.data-v-0be17cc6 {
   height: 60rpx;
   padding: 0 16rpx 0 22rpx;
+  margin-top: 12rpx;
 }
 .my-center .container .recent .order_line.data-v-0be17cc6 {
   opacity: 1;
@@ -193,4 +198,3 @@
 .data-v-0be17cc6 .uni-navbar--border {
   border-width: 0 !important;
 }
-

@@ -1,0 +1,6 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "我的评价",
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
+}

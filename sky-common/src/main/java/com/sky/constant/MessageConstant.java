@@ -25,4 +25,7 @@ public class MessageConstant {
     public static final String ORDER_NOT_FOUND = "订单不存在";
 
     public static final String ALREADY_EXISTS = "已存在";
+    public static final String ORDER_NOT_COMPLETED = "订单未完成，无法评价";
+    public static final String ORDER_ALREADY_COMMENTED = "该订单已评价";
+    public static final String ORDER_NOT_BELONG_TO_USER = "该订单不属于当前用户";
 }

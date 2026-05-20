@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>评论管理 - 餐饮平台</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <style>
+    body { margin: 0; background: #f0f2f5; font-family: "Helvetica Neue", Arial, sans-serif; }
+    .layout-shell { display: flex; min-height: 100vh; }
+    .sidebar { width: 200px; background: #343744; color: #bfcbd9; padding-top: 18px; flex-shrink: 0; }
+    .sidebar-item { display: flex; align-items: center; height: 56px; margin: 0 18px 14px; padding: 0 18px; border-radius: 4px; color: #bfcbd9; text-decoration: none; box-sizing: border-box; }
+    .sidebar-item.active { background: #ffffff; color: #333; }
+    .sidebar-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; margin-right: 12px; opacity: 0.8; }
+    .main-panel { flex: 1; padding: 20px; box-sizing: border-box; }
+    .app-container { max-width: 100%; }
+    .header { background: #fff; padding: 16px 24px; margin-bottom: 16px; border-radius: 4px;
+              display: flex; align-items: center; justify-content: space-between; }
+    .header h2 { margin: 0; font-size: 18px; color: #303133; }
+    .back-link { color: #409EFF; text-decoration: none; font-size: 14px; cursor: pointer; }
+    .filter-bar { margin-bottom: 16px; display: flex; gap: 12px; align-items: center; }
+    .comment-table { background: #fff; border-radius: 4px; padding: 16px; }
+    .reply-text { color: #E6A23C; }
+    .star { color: #F7BA2A; font-size: 16px; }
+    .star-empty { color: #C0C4CC; }
+    .content-cell { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .images-row { display: flex; gap: 4px; flex-wrap: wrap; }
+    .thumb-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; }
+    .reply-dialog .el-textarea { margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="layout-shell">
+    <aside class="sidebar">
+      <a class="sidebar-item" href="index.html#/dashboard">
+        <span class="sidebar-dot"></span>
+        <span>工作台</span>
+      </a>
+      <a class="sidebar-item" href="index.html#/statistics">
+        <span class="sidebar-dot"></span>
+        <span>数据统计</span>
+      </a>
+      <a class="sidebar-item" href="index.html#/order">
+        <span class="sidebar-dot"></span>
+        <span>订单管理</span>
+      </a>
+      <a class="sidebar-item" href="index.html#/setmeal">
+        <span class="sidebar-dot"></span>
+        <span>套餐管理</span>
+      </a>
+      <a class="sidebar-item" href="index.html#/dish">
+        <span class="sidebar-dot"></span>
+        <span>菜品管理</span>
+      </a>
+      <a class="sidebar-item" href="index.html#/category">
+        <span class="sidebar-dot"></span>
+        <span>分类管理</span>
+      </a>
+      <a class="sidebar-item" href="index.html#/employee">
+        <span class="sidebar-dot"></span>
+        <span>员工管理</span>
+      </a>
+      <a class="sidebar-item active" href="comment.html">
+        <span class="sidebar-dot"></span>
+        <span>评论管理</span>
+      </a>
+    </aside>
+    <main class="main-panel">
+      <div class="app-container">
+        <div class="header">
+          <h2>评论管理</h2>
+          <a href="index.html" class="back-link">返回首页</a>
+        </div>
+        <div class="filter-bar">
+          <el-select v-model="filterScore" placeholder="按星级筛选" clearable size="small" style="width:140px" @change="handleFilter">
+            <el-option label="全部" :value="null"></el-option>
+            <el-option label="⭐ 1星" :value="1"></el-option>
+            <el-option label="⭐⭐ 2星" :value="2"></el-option>
+            <el-option label="⭐⭐⭐ 3星" :value="3"></el-option>
+            <el-option label="⭐⭐⭐⭐ 4星" :value="4"></el-option>
+            <el-option label="⭐⭐⭐⭐⭐ 5星" :value="5"></el-option>
+          </el-select>
+          <el-button type="primary" size="small" @click="loadData">刷新</el-button>
+        </div>
+        <div class="comment-table">
+          <el-table :data="tableData" border stripe v-loading="loading" style="width:100%">
+            <el-table-column prop="id" label="ID" width="70"></el-table-column>
+            <el-table-column prop="orderNumber" label="订单号" width="140"></el-table-column>
+            <el-table-column label="用户" width="120">
+              <template slot-scope="scope">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <img :src="scope.row.userAvatar" style="width:30px;height:30px;border-radius:50%;" v-if="scope.row.userAvatar">
+                  <span>{{ displayUserName(scope.row) }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="评分" width="130">
+              <template slot-scope="scope">
+                <span v-for="i in [1,2,3,4,5]" :key="i"
+                      :class="i <= scope.row.score ? 'star' : 'star-empty'">★</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="评价内容" min-width="200">
+              <template slot-scope="scope">
+                <div class="content-cell" :title="scope.row.content">{{ scope.row.content }}</div>
+                <div class="images-row" v-if="scope.row.images && scope.row.images.length > 0">
+                  <img class="thumb-img" v-for="(img, idx) in scope.row.images" :key="idx"
+                       :src="resolveImageUrl(img)" @click="previewImage(img)">
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="评价时间" width="170">
+              <template slot-scope="scope">{{ formatTime(scope.row.createTime) }}</template>
+            </el-table-column>
+            <el-table-column label="商家回复" min-width="180">
+              <template slot-scope="scope">
+                <span v-if="scope.row.replyContent" class="reply-text">{{ scope.row.replyContent }}</span>
+                <span v-else style="color:#C0C4CC;">未回复</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" fixed="right">
+              <template slot-scope="scope">
+                <el-button type="text" size="small" @click="openReplyDialog(scope.row)">
+                  {{ scope.row.replyContent ? '修改回复' : '回复' }}
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div style="margin-top:16px;text-align:right;">
+            <el-pagination
+              background
+              layout="total, prev, pager, next"
+              :total="total"
+              :page-size="pageSize"
+              :current-page.sync="currentPage"
+              @current-change="loadData">
+            </el-pagination>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 回复对话框 -->
+    <el-dialog :title="replyForm.replyContent ? '修改回复' : '商家回复'" :visible.sync="replyVisible" width="500px" class="reply-dialog">
+      <div style="margin-bottom:8px;">
+        <strong>用户评价：</strong>
+        <span v-for="i in [1,2,3,4,5]" :key="i"
+              :class="i <= currentComment.score ? 'star' : 'star-empty'">★</span>
+        <p style="color:#666;margin-top:4px;">{{ currentComment.content }}</p>
+      </div>
+      <el-input type="textarea" v-model="replyForm.replyContent" :rows="4"
+                placeholder="请输入回复内容" maxlength="500" show-word-limit></el-input>
+      <div slot="footer">
+        <el-button @click="replyVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitReply" :loading="replySubmitting">提交</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 图片预览 -->
+    <el-dialog :visible.sync="previewVisible" width="600px" append-to-body>
+      <img :src="previewUrl" style="width:100%;">
+    </el-dialog>
+  </div>
+</div>
+
+<script src="https://unpkg.com/vue@2.7.14/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
+<script src="https://unpkg.com/axios@1.6.0/dist/axios.min.js"></script>
+<script>
+var request = axios.create({ baseURL: '/api', timeout: 30000 });
+
+request.interceptors.request.use(function(config) {
+  function getCookie(name) { var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)')); return match ? decodeURIComponent(match[3]) : null; }
+	  var token = getCookie('token') || localStorage.getItem('token');
+  if (token) config.headers.token = token;
+  return config;
+});
+
+request.interceptors.response.use(function(resp) {
+  if (resp.data.code === 1) return resp.data;
+  throw new Error(resp.data.msg || '请求失败');
+}, function(err) {
+  if (err.response && err.response.status === 401) {
+    window.location.href = 'index.html#/login';
+  }
+  return Promise.reject(err);
+});
+
+new Vue({
+  el: '#app',
+  data: {
+    tableData: [],
+    loading: false,
+    currentPage: 1,
+    pageSize: 10,
+    total: 0,
+    filterScore: null,
+    replyVisible: false,
+    replySubmitting: false,
+    replyForm: { commentId: null, replyContent: '' },
+    currentComment: {},
+    previewVisible: false,
+    previewUrl: ''
+  },
+  created: function() {
+    this.loadData();
+  },
+  methods: {
+    resolveImageUrl: function(url) {
+      if (!url) return '';
+      if (/^https?:\/\//i.test(url)) return url;
+
+      var normalized = url.replace(/^\/+/, '');
+      if (normalized.indexOf('images/') === 0) {
+        normalized = normalized.substring('images/'.length);
+      }
+      return window.location.origin + '/images/' + normalized;
+    },
+    loadData: function() {
+      var that = this;
+      that.loading = true;
+      var params = { page: that.currentPage, pageSize: that.pageSize };
+      if (that.filterScore != null) params.score = that.filterScore;
+      request.get('/comment/page', { params: params }).then(function(res) {
+        that.tableData = (res.data.records || []).map(function(item) {
+          var userName = item.userName || item.nickName || item.nickname || item.name || item.username || '';
+          var userAvatar = item.userAvatar || item.avatar || item.userPic || item.userIcon || '';
+          return Object.assign({}, item, {
+            userName: userName,
+            userAvatar: userAvatar
+          });
+        });
+        that.total = res.data.total || 0;
+      }).finally(function() { that.loading = false; });
+    },
+    displayUserName: function(row) {
+      return row.userName || row.nickName || row.nickname || row.name || row.username || '匿名用户';
+    },
+    handleFilter: function() {
+      this.currentPage = 1;
+      this.loadData();
+    },
+    openReplyDialog: function(row) {
+      this.currentComment = row;
+      this.replyForm = {
+        commentId: row.id,
+        replyContent: row.replyContent || ''
+      };
+      this.replyVisible = true;
+    },
+    submitReply: function() {
+      var that = this;
+      if (!that.replyForm.replyContent.trim()) {
+        that.$message.warning('请输入回复内容');
+        return;
+      }
+      that.replySubmitting = true;
+      request.put('/comment/reply', that.replyForm).then(function() {
+        that.$message.success('回复成功');
+        that.replyVisible = false;
+        that.loadData();
+      }).finally(function() { that.replySubmitting = false; });
+    },
+    previewImage: function(url) {
+      this.previewUrl = this.resolveImageUrl(url);
+      this.previewVisible = true;
+    },
+    formatTime: function(t) {
+      if (!t) return '';
+      return t.replace('T', ' ').substring(0, 19);
+    }
+  }
+});
+</script>
+</body>
+</html>

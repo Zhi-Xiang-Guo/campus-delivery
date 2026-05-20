@@ -138,7 +138,7 @@ var render = function() {
               item.status,
               _vm.getOvertime(item.orderTime)
             )
-            var g0 = _vm.numes(item.orderDetailList).total.toFixed(2)
+            var g0 = Number(item.amount || 0).toFixed(2)
             var m2 = _vm.numes(item.orderDetailList)
             var m3 = item.status === 1 && _vm.getOvertime(item.orderTime) > 0
             return {
@@ -444,6 +444,32 @@ var _index = __webpack_require__(/*! @/utils/index.js */ 29);function _interopRe
     // 关闭弹层
     closePopup: function closePopup(type) {
       this.$refs.commonPopup.close(type);
+    },
+    goComment: function goComment(id) {
+      var orderId = this.getOrderId(id);
+      if (!orderId) {
+        uni.showToast({ title: '订单信息异常，请返回后重试', icon: 'none' });
+        return;
+      }
+      uni.navigateTo({
+        url: '/pages/comment/comment?orderId=' + orderId });
+
+    },
+    getOrderId: function getOrderId(value) {
+      if (value == null) return '';
+      if (typeof value === 'number' || typeof value === 'string') {
+        var id = String(value).trim();
+        return /^\d+$/.test(id) ? id : '';
+      }
+      if (value.id != null) return String(value.id);
+      if (value.orderId != null) return String(value.orderId);
+      if (value.currentTarget && value.currentTarget.dataset) {
+        var dataset = value.currentTarget.dataset;
+        if (dataset.id != null) return String(dataset.id);
+        if (dataset.orderId != null) return String(dataset.orderId);
+        if (dataset.orderid != null) return String(dataset.orderid);
+      }
+      return '';
     },
     // 返回我的
     goBack: function goBack() {

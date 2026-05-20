@@ -2688,6 +2688,7 @@ var store = new _vuex.default.Store({
     },
     setToken: function setToken(state, provider) {
       state.token = provider;
+      wx.setStorageSync('auth_token', provider);
     },
     setArrivalTime: function setArrivalTime(state, provider) {
       state.arrivals = provider;
@@ -19948,7 +19949,7 @@ Object.defineProperty(exports, "__esModule", { value: true });exports.default = 
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });exports.repetitionOrder = exports.paymentOrder = exports.reminderOrder = exports.cancelOrder = exports.getOrderDetail = exports.getOrderPage = exports.getShopPhone = exports.getShopStatus = exports.querySetmealDishById = exports.getAddressBookDefault = exports.oneOrderAgain = exports.queryAddressBookById = exports.delAddressBook = exports.editAddressBook = exports.addAddressBook = exports.putAddressBookDefault = exports.queryAddressBookList = exports.submitOrderSubmit = exports.getSubmitToken = exports.queryOrderUserPage = exports.delShoppingCart = exports.newShoppingCartSub = exports.newAddShoppingCartAdd = exports.editHoppingCart = exports.getShoppingCartList = exports.querySetmeaList = exports.addShoppingCart = exports.commonDownload = exports.dishListByCategoryId = exports.getCategoryList = exports.userLogin = exports.payOrder = exports.clearOrder = exports.delDish = exports.addDish = exports.getDishList = exports.getDishDetail = exports.getList = exports.getMoreNorm = exports.getTableOrderDishList = exports.getTableState = exports.openTable = void 0;var _request = __webpack_require__(/*! ../../utils/request.js */ 25);
+Object.defineProperty(exports, "__esModule", { value: true });exports.submitComment = exports.getCommentPage = exports.repetitionOrder = exports.paymentOrder = exports.reminderOrder = exports.cancelOrder = exports.getOrderDetail = exports.getOrderPage = exports.getShopPhone = exports.getShopStatus = exports.querySetmealDishById = exports.getAddressBookDefault = exports.oneOrderAgain = exports.queryAddressBookById = exports.delAddressBook = exports.editAddressBook = exports.addAddressBook = exports.putAddressBookDefault = exports.queryAddressBookList = exports.submitOrderSubmit = exports.getSubmitToken = exports.queryOrderUserPage = exports.delShoppingCart = exports.newShoppingCartSub = exports.newAddShoppingCartAdd = exports.editHoppingCart = exports.getShoppingCartList = exports.querySetmeaList = exports.addShoppingCart = exports.commonDownload = exports.dishListByCategoryId = exports.getCategoryList = exports.userLogin = exports.payOrder = exports.clearOrder = exports.delDish = exports.addDish = exports.getDishList = exports.getDishDetail = exports.getList = exports.getMoreNorm = exports.getTableOrderDishList = exports.getTableState = exports.openTable = void 0;var _request = __webpack_require__(/*! ../../utils/request.js */ 25);
 
 // 开桌
 var openTable = function openTable(params) {return (
@@ -20305,6 +20306,20 @@ exports.paymentOrder = paymentOrder;var repetitionOrder = function repetitionOrd
       url: "/user/order/repetition/".concat(params),
       method: 'POST',
       params: params }));};exports.repetitionOrder = repetitionOrder;
+
+// 提交评论
+var submitComment = function submitComment(params) {return (
+    (0, _request.request)({
+      url: "/user/comment/submit",
+      method: 'POST',
+      params: params }));};exports.submitComment = submitComment;
+
+// 查询我的评论列表
+var getCommentPage = function getCommentPage(params) {return (
+    (0, _request.request)({
+      url: "/user/comment/page",
+      method: 'GET',
+      params: params }));};exports.getCommentPage = getCommentPage;
 
 /***/ }),
 
@@ -28725,6 +28740,32 @@ var _default = {
     },
     call: function call() {
       (0, _index.call)(this.shopPhone());
+    },
+    getOrderId: function getOrderId(value) {
+      if (value == null) return '';
+      if (typeof value === 'number' || typeof value === 'string') {
+        var id = String(value).trim();
+        return /^\d+$/.test(id) ? id : '';
+      }
+      if (value.id != null) return String(value.id);
+      if (value.orderId != null) return String(value.orderId);
+      if (value.currentTarget && value.currentTarget.dataset) {
+        var dataset = value.currentTarget.dataset;
+        if (dataset.id != null) return String(dataset.id);
+        if (dataset.orderId != null) return String(dataset.orderId);
+        if (dataset.orderid != null) return String(dataset.orderid);
+      }
+      return this.orderDetailsData && this.orderDetailsData.id ? String(this.orderDetailsData.id) : '';
+    },
+    goComment: function goComment(id) {
+      var orderId = this.getOrderId(id);
+      if (!orderId) {
+        uni.showToast({ title: '订单信息异常，请返回后重试', icon: 'none' });
+        return;
+      }
+      uni.navigateTo({
+        url: '/pages/comment/comment?orderId=' + orderId });
+
     } }) };exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 

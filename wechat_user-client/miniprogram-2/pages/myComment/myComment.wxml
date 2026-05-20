@@ -1,0 +1,59 @@
+<view class="my-comment-page">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <text class="nav-title">我的评价</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <scroll-view class="comment-list" scroll-y="true" bindscrolltolower="onReachBottom"
+               wx:if="{{commentList.length > 0}}"
+               style="height: calc(100vh - 176rpx);">
+    <view class="comment-card" wx:for="{{commentList}}" wx:key="id">
+      <view class="card-header">
+        <view class="order-info">
+          <text class="order-tag">已评价</text>
+          <text class="order-number">订单 #{{item.orderId}}</text>
+        </view>
+        <view class="star-row">
+          <text class="star {{starItem <= item.score ? 'active' : ''}}"
+                wx:for="{{[1,2,3,4,5]}}" wx:for-item="starItem" wx:key="*this">★</text>
+        </view>
+      </view>
+
+      <!-- 订单菜品 -->
+      <view class="order-items" wx:if="{{item.orderItems && item.orderItems.length > 0}}">
+        <text class="item-name" wx:for="{{item.orderItems}}" wx:key="name" wx:for-item="dish">
+          {{dish.name}}×{{dish.number}}
+        </text>
+      </view>
+
+      <view class="comment-text" wx:if="{{item.content}}">{{item.content}}</view>
+      <view class="comment-text empty-text-inline" wx:else>用户未填写文字评价</view>
+
+      <!-- 评论图片 -->
+      <view class="comment-images" wx:if="{{item.images && item.images.length > 0}}">
+        <image class="comment-img" wx:for="{{item.images}}" wx:key="*this"
+               src="{{item}}" mode="aspectFill"></image>
+      </view>
+
+      <view class="comment-time">{{item.createTime}}</view>
+
+      <!-- 商家回复 -->
+      <view class="reply-box" wx:if="{{item.replyContent}}">
+        <text class="reply-label">商家回复：</text>
+        <text class="reply-text">{{item.replyContent}}</text>
+      </view>
+    </view>
+
+    <view class="loading-tip" wx:if="{{loading}}">加载中...</view>
+    <view class="loading-tip" wx:if="{{!hasMore && commentList.length > 0}}">— 没有更多了 —</view>
+  </scroll-view>
+
+  <!-- 空状态 -->
+  <view class="empty-box" wx:if="{{commentList.length === 0 && !loading}}">
+    <image class="empty-img" src="../../static/no_order.png" mode="aspectFit"></image>
+    <text class="empty-text">暂无评价</text>
+  </view>
+</view>

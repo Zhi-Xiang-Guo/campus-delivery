@@ -131,7 +131,7 @@ var render = function() {
     var $orig = _vm.__get_orig(item)
 
     var m0 = _vm.statusWord(item.status, _vm.getOvertime(item.orderTime))
-    var g0 = _vm.numes(item.orderDetailList).total.toFixed(2)
+    var g0 = Number(item.amount || 0).toFixed(2)
     var m1 = _vm.numes(item.orderDetailList)
     var m2 = item.status === 1 && _vm.getOvertime(item.orderTime) > 0
     return {
@@ -379,6 +379,34 @@ var _index = __webpack_require__(/*! @/utils/index.js */ 29);function _interopRe
       uni.navigateTo({
         url: '/pages/historyOrder/historyOrder' });
 
+    },
+    goComment: function goComment(id) {
+      var orderId = this.getOrderId(id);
+      if (orderId) {
+        uni.navigateTo({
+          url: '/pages/comment/comment?orderId=' + orderId });
+
+        return;
+      }
+      uni.navigateTo({
+        url: '/pages/myComment/myComment' });
+
+    },
+    getOrderId: function getOrderId(value) {
+      if (value == null) return '';
+      if (typeof value === 'number' || typeof value === 'string') {
+        var id = String(value).trim();
+        return /^\d+$/.test(id) ? id : '';
+      }
+      if (value.id != null) return String(value.id);
+      if (value.orderId != null) return String(value.orderId);
+      if (value.currentTarget && value.currentTarget.dataset) {
+        var dataset = value.currentTarget.dataset;
+        if (dataset.id != null) return String(dataset.id);
+        if (dataset.orderId != null) return String(dataset.orderId);
+        if (dataset.orderid != null) return String(dataset.orderid);
+      }
+      return '';
     },
     oneOrderFun: function oneOrderFun(id) {return _asyncToGenerator( /*#__PURE__*/_regenerator.default.mark(function _callee() {var pages, routeIndex;return _regenerator.default.wrap(function _callee$(_context) {while (1) {switch (_context.prev = _context.next) {case 0:
                 pages = getCurrentPages();

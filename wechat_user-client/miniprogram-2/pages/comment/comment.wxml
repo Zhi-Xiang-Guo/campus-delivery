@@ -1,0 +1,71 @@
+<view class="comment-page">
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <text class="nav-title">发布评价</text>
+  </view>
+
+  <view class="comment-content">
+    <!-- 订单菜品展示 -->
+    <view class="order-dishes" wx:if="{{orderDetailList.length > 0}}">
+      <view class="section-title">评价商品</view>
+      <scroll-view scroll-x="true" class="dish-scroll">
+        <view class="dish-item" wx:for="{{orderDetailList}}" wx:key="id">
+          <image class="dish-img" src="{{item.image}}" mode="aspectFill"></image>
+          <text class="dish-name">{{item.name}}</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 评分 -->
+    <view class="score-section">
+      <view class="section-title">总体评分</view>
+      <view class="star-row">
+        <view class="star-wrapper" wx:for="{{[1,2,3,4,5]}}" wx:key="*this"
+              data-score="{{item}}" bindtap="chooseScore">
+          <text class="star {{index < score ? 'active' : ''}}">★</text>
+        </view>
+      </view>
+      <view class="score-tip-row">
+        <text class="score-text">{{score}}分</text>
+        <text class="score-desc">{{scoreText}}</text>
+      </view>
+    </view>
+
+    <!-- 文字评价 -->
+    <view class="content-section">
+      <view class="section-title">评价内容</view>
+      <textarea class="content-input"
+                placeholder="请输入您的评价（选填）"
+                maxlength="500"
+                value="{{content}}"
+                bindinput="onContentInput"></textarea>
+      <text class="char-count">{{content.length}}/500</text>
+    </view>
+
+    <!-- 图片上传 -->
+    <view class="image-section">
+      <view class="section-title">晒图（选填）</view>
+      <view class="image-list">
+        <view class="image-item" wx:for="{{images}}" wx:key="*this">
+          <image class="upload-img" src="{{item}}" mode="aspectFill"></image>
+          <view class="delete-btn" data-index="{{index}}" bindtap="deleteImage">×</view>
+        </view>
+        <view class="image-add" wx:if="{{images.length < 6}}" bindtap="chooseImage">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-bar">
+    <button class="submit-btn {{submitting ? 'disabled' : ''}}"
+            bindtap="submitComment"
+            disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '提交评价'}}
+    </button>
+  </view>
+</view>
